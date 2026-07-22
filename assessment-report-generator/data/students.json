@@ -1,0 +1,74 @@
+{
+  "students": [
+    {
+      "id": "S001",
+      "name": "Nishaleni",
+      "class": "10A",
+      "scores": {
+        "Mathematics": 85,
+        "Science": 78,
+        "English": 92,
+        "Social Studies": 81,
+        "Computer Science": 88
+      },
+      "percentile": 87,
+      "attendance": 95
+    },
+    {
+      "id": "S002",
+      "name": "Maha Lakshmi",
+      "class": "10A",
+      "scores": {
+        "Mathematics": 72,
+        "Science": 90,
+        "English": 76,
+        "Social Studies": 85,
+        "Computer Science": 79
+      },
+      "percentile": 82,
+      "attendance": 92
+    },
+    {
+      "id": "S003",
+      "name": "Mohammed Nizamudeen",
+      "class": "10B",
+      "scores": {
+        "Mathematics": 63,
+        "Science": 55,
+        "English": 71,
+        "Social Studies": 68,
+        "Computer Science": 65
+      },
+      "percentile": 45,
+      "attendance": 74
+    },
+    {
+      "id": "S004",
+      "name": "Priya Sharma",
+      "class": "10A",
+      "scores": {
+        "Mathematics": 94,
+        "Science": 91,
+        "English": 88,
+        "Social Studies": 92,
+        "Computer Science": 96
+      },
+      "percentile": 95,
+      "attendance": 97
+    },
+    {
+      "id": "S005",
+      "name": "Arjun Kumar",
+      "class": "10B",
+      "scores": {
+        "Mathematics": 45,
+        "Science": 52,
+        "English": 48,
+        "Social Studies": 55,
+        "Computer Science": 50
+      },
+      "percentile": 28,
+      "attendance": 60
+    }
+  ]
+}

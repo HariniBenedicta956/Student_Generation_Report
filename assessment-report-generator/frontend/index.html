@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Assessment Report Generator</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #f2f4f7;
+    margin: 0;
+    padding: 24px;
+    color: #222;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  header {
+    background: #1a3c6e;
+    color: #fff;
+    padding: 18px 24px;
+  }
+  header h1 { margin: 0; font-size: 20px; }
+  section { padding: 20px 24px; border-bottom: 1px solid #eee; }
+  section:last-child { border-bottom: none; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: #555; margin: 0 0 12px; }
+  input[type="file"] { padding: 8px; border: 1px dashed #aaa; border-radius: 6px; width: 100%; }
+  .student-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid #f0f0f0;
+  }
+  .student-row:last-child { border-bottom: none; }
+  .student-left { display: flex; align-items: center; gap: 10px; }
+  .status { font-size: 13px; padding: 2px 8px; border-radius: 10px; }
+  .status.pending { background: #eee; color: #666; }
+  .status.processing { background: #fff3cd; color: #8a6d00; }
+  .status.done { background: #d4edda; color: #1e7e34; }
+  .status.done_with_fallback { background: #ffe8cc; color: #b45f00; }
+  .status.error { background: #f8d7da; color: #a71d2a; }
+  .download-link { font-size: 13px; margin-left: 10px; color: #1a3c6e; text-decoration: none; }
+  .download-link:hover { text-decoration: underline; }
+  button {
+    background: #1a3c6e; color: #fff; border: none; padding: 10px 18px;
+    border-radius: 6px; font-size: 14px; cursor: pointer;
+  }
+  button:disabled { background: #aab4c2; cursor: not-allowed; }
+  button.secondary { background: #607488; }
+  .progress-bar-outer { background: #eee; border-radius: 6px; height: 10px; overflow: hidden; margin-top: 10px; }
+  .progress-bar-inner { background: #1a3c6e; height: 100%; width: 0%; transition: width .3s; }
+  .progress-text { font-size: 13px; color: #555; margin-top: 6px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card { background: #f7f9fc; border-radius: 8px; padding: 12px 14px; }
+  .stat-card .label { font-size: 12px; color: #777; }
+  .stat-card .value { font-size: 18px; font-weight: 600; color: #1a3c6e; }
+  .estimate-note { font-size: 12px; color: #888; margin-top: 8px; }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header><h1>📊 Assessment Report Generator</h1></header>
+
+  <section>
+    <h2>1. Upload Student Data (JSON/CSV)</h2>
+    <input type="file" id="fileInput" accept=".json,.csv" />
+  </section>
+
+  <section id="studentsSection" style="display:none;">
+    <h2>2. Students (<span id="studentCount">0</span> loaded)</h2>
+    <div id="studentList"></div>
+    <div class="estimate-note" id="estimateNote"></div>
+    <div class="actions">
+      <button id="generateBtn">🚀 Generate Reports</button>
+      <button id="downloadAllBtn" class="secondary" disabled>📥 Download All (ZIP)</button>
+    </div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+    <div class="progress-text" id="progressText"></div>
+  </section>
+
+  <section id="statsSection" style="display:none;">
+    <h2>📈 Stats</h2>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">Total Tokens</div><div class="value" id="statTokens">0</div></div>
+      <div class="stat-card"><div class="label">Estimated Cost</div><div class="value" id="statCost">₹0.00</div></div>
+      <div class="stat-card"><div class="label">Processing Time</div><div class="value" id="statTime">0s</div></div>
+      <div class="stat-card"><div class="label">Reports Done</div><div class="value" id="statDone">0/0</div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const API_BASE = "http://localhost:5000";
+const EST_INPUT_TOKENS_PER_STUDENT = 1800;
+const EST_OUTPUT_TOKENS_PER_STUDENT = 960;
+const EST_INR_PER_STUDENT = 0.35;
+
+let students = [];
+
+const fileInput = document.getElementById("fileInput");
+const studentsSection = document.getElementById("studentsSection");
+const studentList = document.getElementById("studentList");
+const studentCount = document.getElementById("studentCount");
+const estimateNote = document.getElementById("estimateNote");
+const generateBtn = document.getElementById("generateBtn");
+const downloadAllBtn = document.getElementById("downloadAllBtn");
+const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+const statsSection = document.getElementById("statsSection");
+const statTokens = document.getElementById("statTokens");
+const statCost = document.getElementById("statCost");
+const statTime = document.getElementById("statTime");
+const statDone = document.getElementById("statDone");
+
+fileInput.addEventListener("change", handleFile);
+generateBtn.addEventListener("click", generateReports);
+downloadAllBtn.addEventListener("click", () => {
+  window.location.href = `${API_BASE}/download-all`;
+});
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const text = evt.target.result;
+    try {
+      students = file.name.toLowerCase().endsWith(".csv") ? parseCSV(text) : parseJSON(text);
+    } catch (err) {
+      alert(`Could not parse "${file.name}": ${err.message}`);
+      return;
+    }
+    if (!students.length) {
+      alert(`No student rows found in "${file.name}". Check the file has a header row plus at least one data row.`);
+      return;
+    }
+    renderStudentList();
+  };
+  reader.readAsText(file);
+}
+
+function parseJSON(text) {
+  const data = JSON.parse(text);
+  return Array.isArray(data) ? data : (data.students || []);
+}
+
+function parseCSV(text) {
+  text = text.replace(/^﻿/, ""); // strip UTF-8 BOM (common in Excel exports)
+  const lines = text.trim().split(/\r?\n/);
+  const rawHeaders = lines[0].split(",").map(h => h.trim());
+  const known = new Set(["id", "name", "class", "percentile", "attendance"]);
+  // Match id/name/class/percentile/attendance case-insensitively; everything else is a score subject.
+  const headerKeyMap = rawHeaders.map(h => {
+    const lower = h.toLowerCase();
+    return known.has(lower) ? lower : h;
+  });
+
+  return lines.slice(1).filter(l => l.trim().length).map((line, i) => {
+    const values = line.split(",").map(v => v.trim());
+    const row = {};
+    headerKeyMap.forEach((key, idx) => { row[key] = values[idx]; });
+    const scores = {};
+    headerKeyMap.forEach(key => {
+      if (!known.has(key) && row[key] !== undefined && row[key] !== "" && !isNaN(Number(row[key]))) {
+        scores[key] = Number(row[key]);
+      }
+    });
+    return {
+      id: row.id || `S${String(i + 1).padStart(3, "0")}`,
+      name: row.name || `Student ${i + 1}`,
+      class: row.class || "",
+      scores,
+      percentile: row.percentile && !isNaN(Number(row.percentile)) ? Number(row.percentile) : null,
+      attendance: row.attendance && !isNaN(Number(row.attendance)) ? Number(row.attendance) : null,
+    };
+  });
+}
+
+function renderStudentList() {
+  studentsSection.style.display = "block";
+  statsSection.style.display = "none";
+  studentCount.textContent = students.length;
+  studentList.innerHTML = students.map(s => `
+    <div class="student-row" data-id="${s.id}">
+      <div class="student-left">
+        <input type="checkbox" class="student-check" checked />
+        <span>${s.name}</span>
+      </div>
+      <div>
+        <span class="status pending" data-role="status">⏳ Pending</span>
+        <a class="download-link" data-role="download" style="display:none;" href="#">Download</a>
+      </div>
+    </div>
+  `).join("");
+  updateEstimate();
+  studentList.querySelectorAll(".student-check").forEach(cb => cb.addEventListener("change", updateEstimate));
+  downloadAllBtn.disabled = true;
+  progressBar.style.width = "0%";
+  progressText.textContent = "";
+}
+
+function selectedIds() {
+  return [...studentList.querySelectorAll(".student-row")]
+    .filter(row => row.querySelector(".student-check").checked)
+    .map(row => row.dataset.id);
+}
+
+function updateEstimate() {
+  const n = selectedIds().length;
+  const estTokens = n * (EST_INPUT_TOKENS_PER_STUDENT + EST_OUTPUT_TOKENS_PER_STUDENT);
+  const estCost = (n * EST_INR_PER_STUDENT).toFixed(2);
+  estimateNote.textContent = n
+    ? `💰 Estimated before generating: ~${estTokens.toLocaleString()} tokens, ~₹${estCost} for ${n} student(s)`
+    : "Select at least one student to generate reports.";
+}
+
+function setRowStatus(id, statusClass, label) {
+  const row = studentList.querySelector(`.student-row[data-id="${id}"]`);
+  if (!row) return;
+  const badge = row.querySelector('[data-role="status"]');
+  badge.className = `status ${statusClass}`;
+  badge.textContent = label;
+}
+
+function setRowDownload(id, url) {
+  const row = studentList.querySelector(`.student-row[data-id="${id}"]`);
+  if (!row) return;
+  const link = row.querySelector('[data-role="download"]');
+  link.href = `${API_BASE}${url}`;
+  link.style.display = "inline";
+}
+
+async function generateReports() {
+  const ids = selectedIds();
+  if (!ids.length) {
+    alert("Select at least one student first.");
+    return;
+  }
+
+  generateBtn.disabled = true;
+  fileInput.disabled = true;
+  statsSection.style.display = "block";
+
+  try {
+    const uploadRes = await fetch(`${API_BASE}/upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ students }),
+    });
+    if (!uploadRes.ok) throw new Error(`Upload failed with status ${uploadRes.status}`);
+  } catch (err) {
+    alert(`Could not reach the backend at ${API_BASE}. Is the Flask server running?\n\n${err.message}`);
+    generateBtn.disabled = false;
+    fileInput.disabled = false;
+    return;
+  }
+
+  let totalTokens = 0, totalCostInr = 0, done = 0;
+  const startTime = performance.now();
+
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    setRowStatus(id, "processing", "⏳ Processing");
+    progressText.textContent = `Processing ${i + 1}/${ids.length}...`;
+    progressBar.style.width = `${Math.round(((i) / ids.length) * 100)}%`;
+
+    try {
+      const res = await fetch(`${API_BASE}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.status === "error") {
+        setRowStatus(id, "error", "❌ Error");
+      } else {
+        const label = data.status === "done_with_fallback" ? "⚠️ Done (fallback)" : "✅ Done";
+        setRowStatus(id, data.status, label);
+        setRowDownload(id, data.download_url);
+        totalTokens += data.total_tokens || 0;
+        totalCostInr += data.cost_inr || 0;
+        done++;
+      }
+    } catch (e) {
+      setRowStatus(id, "error", "❌ Error");
+    }
+
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    statTokens.textContent = totalTokens.toLocaleString();
+    statCost.textContent = `₹${totalCostInr.toFixed(2)}`;
+    statTime.textContent = `${elapsed}s`;
+    statDone.textContent = `${done}/${ids.length}`;
+  }
+
+  progressBar.style.width = "100%";
+  progressText.textContent = `Done! Generated ${done}/${ids.length} reports.`;
+  generateBtn.disabled = false;
+  fileInput.disabled = false;
+  downloadAllBtn.disabled = done === 0;
+}
+</script>
+</body>
+</html>
