@@ -9,7 +9,7 @@ from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 
 from prompt import SYSTEM_PROMPT, build_prompt, FALLBACK_NARRATIVE
-from gemini_client import call_gemini_flash, estimate_tokens, calculate_cost
+from llm_client import call_llm, estimate_tokens, calculate_cost
 from pdf_generator import generate_pdf
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -98,7 +98,7 @@ def upload():
 def _process_student(student):
     prompt = build_prompt(student)
     try:
-        narrative, input_tokens, output_tokens = call_gemini_flash(prompt, SYSTEM_PROMPT)
+        narrative, input_tokens, output_tokens = call_llm(prompt, SYSTEM_PROMPT)
         used_fallback = False
     except Exception:
         narrative = FALLBACK_NARRATIVE
@@ -203,4 +203,6 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    # host=0.0.0.0 binds every network interface (not just loopback) so the app
+    # is reachable from other devices via the server's LAN/public IP.
+    app.run(host="0.0.0.0", port=5000, debug=True)

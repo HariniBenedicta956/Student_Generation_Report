@@ -1,5 +1,5 @@
 flask
 flask-cors
-google-genai
+requests
 reportlab
 python-dotenv
