@@ -1,0 +1,365 @@
+{
+  "overall_elapsed_seconds": 481.5,
+  "results": [
+    {
+      "provider": "gemini",
+      "student_id": "S001",
+      "student_name": "Nishaleni",
+      "status": "success",
+      "error": null,
+      "time_seconds": 6.38,
+      "input_tokens": 157,
+      "output_tokens": 366,
+      "total_tokens": 523,
+      "cost_usd": 0.000122,
+      "cost_inr": 0.0105,
+      "word_count": 200,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\gemini\\S001_Nishaleni.pdf",
+      "pdf_size_bytes": 4257,
+      "narrative": {
+        "summary": "Nishaleni has demonstrated strong overall academic performance in Class 10A, achieving an 87th percentile ranking alongside an excellent 95% attendance record. Her highest achievements are in English and Computer Science, reflecting strong linguistic and technical capabilities.",
+        "strengths": [
+          "High proficiency in English (92/100), demonstrating exceptional language and communication skills.",
+          "Solid technical aptitude with impressive scores in Computer Science (88/100) and Mathematics (85/100).",
+          "Consistent learning discipline supported by a strong attendance record of 95%."
+        ],
+        "improvements": [
+          "Targeted effort needed in Science (78/100) to bring it in line with her higher-performing subjects.",
+          "Deeper conceptual review required in Social Studies (81/100) to improve analytical responses.",
+          "Balancing focus between STEM subjects and humanities to ensure uniform academic growth."
+        ],
+        "recommendations": [
+          "Utilize visual aids and practical experiments to strengthen core understanding in Science.",
+          "Create structured revision outlines for Social Studies to better retain complex historical and geographical facts.",
+          "Participate in coding challenges or writing workshops to build on existing strengths in Computer Science and English."
+        ],
+        "career_guidance": "Given her exceptional strengths in language and technology, Nishaleni would thrive in interdisciplinary fields such as Computational Linguistics, Software Engineering, or Technical Writing.",
+        "overall_insight": "Nishaleni is a highly dedicated student with a well-rounded academic profile, poised for exceptional performance with slight focus on boosting her Science comprehension."
+      }
+    },
+    {
+      "provider": "gemini",
+      "student_id": "S002",
+      "student_name": "Maha Lakshmi",
+      "status": "success",
+      "error": null,
+      "time_seconds": 6.4,
+      "input_tokens": 156,
+      "output_tokens": 309,
+      "total_tokens": 465,
+      "cost_usd": 0.000104,
+      "cost_inr": 0.009,
+      "word_count": 164,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\gemini\\S002_Maha_Lakshmi.pdf",
+      "pdf_size_bytes": 3935,
+      "narrative": {
+        "summary": "Maha Lakshmi has demonstrated strong overall academic performance with an 82nd percentile standing and a reliable 92% attendance rate. She shows notable strength in Science and Social Studies, reflecting a well-balanced aptitude across different learning domains.",
+        "strengths": [
+          "Exceptional performance in Science, achieving a top score of 90%",
+          "Strong analytical and critical thinking skills in Social Studies (85%)",
+          "Consistent dedication and participation reflected by a 92% attendance record"
+        ],
+        "improvements": [
+          "Foundational concepts and problem-solving speed in Mathematics (72%)",
+          "Written expression and advanced comprehension in English (76%)",
+          "Practical logic and coding skills in Computer Science (79%)"
+        ],
+        "recommendations": [
+          "Allocate 30 minutes daily to targeted Mathematics practice and problem-solving.",
+          "Engage in regular English reading and essay writing to boost language proficiency.",
+          "Practice hands-on programming exercises to strengthen Computer Science fundamentals."
+        ],
+        "career_guidance": "Maha's high aptitude in Science combined with strong social awareness makes her a great candidate for careers in Biotechnology, Environmental Science, or Healthcare fields.",
+        "overall_insight": "Maha is a dedicated and high-achieving student who can easily unlock top-tier performance with focused effort in Mathematics."
+      }
+    },
+    {
+      "provider": "gemini",
+      "student_id": "S003",
+      "student_name": "Mohammed Nizamudeen",
+      "status": "success",
+      "error": null,
+      "time_seconds": 5.78,
+      "input_tokens": 158,
+      "output_tokens": 322,
+      "total_tokens": 480,
+      "cost_usd": 0.000108,
+      "cost_inr": 0.0093,
+      "word_count": 183,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\gemini\\S003_Mohammed_Nizamudeen.pdf",
+      "pdf_size_bytes": 4110,
+      "narrative": {
+        "summary": "Mohammed Nizamudeen shows a moderate academic performance in Class 10B, achieving his highest mark in English followed by Social Studies. However, an overall percentile of 45 and a 74% attendance rate indicate that improving class participation is essential for better results.",
+        "strengths": [
+          "Strong verbal and analytical skills in English (71)",
+          "Solid understanding of concepts in Social Studies (68)",
+          "Fair logical foundation in Computer Science (65)"
+        ],
+        "improvements": [
+          "Science performance (55) requires immediate attention and targeted support",
+          "Mathematics (63) requires consistent daily practice to build problem-solving confidence",
+          "Class attendance (74%) needs significant improvement to ensure no core concepts are missed"
+        ],
+        "recommendations": [
+          "Aim for an attendance rate of at least 85% to stay aligned with the classroom curriculum",
+          "Allocate an extra 45 minutes daily specifically to revise Science and Mathematics concepts",
+          "Engage in active group study or seek teacher support for difficult STEM topics"
+        ],
+        "career_guidance": "Mohammed shows potential in humanities and technology-related fields like Communications, Media, or Information Systems. Strengthening his core quantitative skills will further expand his options in tech-driven domains.",
+        "overall_insight": "Improving classroom attendance and focusing on core STEM subjects will be key to elevating Mohammed's overall academic standing."
+      }
+    },
+    {
+      "provider": "gemini",
+      "student_id": "S004",
+      "student_name": "Priya Sharma",
+      "status": "success",
+      "error": null,
+      "time_seconds": 6.45,
+      "input_tokens": 156,
+      "output_tokens": 367,
+      "total_tokens": 523,
+      "cost_usd": 0.000122,
+      "cost_inr": 0.0105,
+      "word_count": 226,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\gemini\\S004_Priya_Sharma.pdf",
+      "pdf_size_bytes": 4430,
+      "narrative": {
+        "summary": "Priya Sharma has demonstrated outstanding academic excellence across all subjects, placing her in the 95th percentile of her class. Her remarkable 97% attendance reflects strong dedication, consistency, and active engagement in her learning journey.",
+        "strengths": [
+          "Exceptional aptitude in technical and quantitative subjects, achieving 96 in Computer Science and 94 in Mathematics.",
+          "Consistent high performance across humanities and sciences, maintaining scores above 90 in Social Studies and Science.",
+          "Excellent classroom attendance and discipline, contributing to a well-rounded academic profile."
+        ],
+        "improvements": [
+          "Refining English language skills, specifically focusing on advanced vocabulary and essay writing, to elevate her score from 88.",
+          "Targeting minor concept gaps in Mathematics to transition high performance into perfect mastery.",
+          "Developing speed-reading and critical analysis techniques for humanities and language papers."
+        ],
+        "recommendations": [
+          "Engage in daily creative writing and reading advanced literature to strengthen English language proficiency.",
+          "Participate in competitive programming or Math Olympiads to further challenge analytical thinking.",
+          "Implement structured study schedules for balanced revision across both core STEM subjects and language arts."
+        ],
+        "career_guidance": "Given her remarkable strengths in Computer Science and Mathematics, Priya is well-positioned for future success in technology-driven fields such as Data Science, Software Engineering, or Artificial Intelligence. Pursuing advanced STEM tracks in higher secondary education will align perfectly with her natural abilities.",
+        "overall_insight": "Priya is an exceptional high-achiever who can reach even greater academic heights by elevating her language arts performance to match her brilliant STEM capabilities."
+      }
+    },
+    {
+      "provider": "gemini",
+      "student_id": "S005",
+      "student_name": "Arjun Kumar",
+      "status": "success",
+      "error": null,
+      "time_seconds": 6.34,
+      "input_tokens": 156,
+      "output_tokens": 294,
+      "total_tokens": 450,
+      "cost_usd": 0.0001,
+      "cost_inr": 0.0086,
+      "word_count": 170,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\gemini\\S005_Arjun_Kumar.pdf",
+      "pdf_size_bytes": 4001,
+      "narrative": {
+        "summary": "Arjun's overall academic performance is currently below average, primarily impacted by a critically low attendance rate of 60%. However, his consistent baseline scores across subjects suggest that increased classroom engagement will lead to significant improvement.",
+        "strengths": [
+          "Shows relative strength and interest in Social Studies and Science.",
+          "Maintains a balanced performance baseline without drastically failing any subject.",
+          "Demonstrates foundational potential that can be built upon with regular study."
+        ],
+        "improvements": [
+          "Classroom attendance requires immediate and drastic improvement.",
+          "Core problem-solving skills in Mathematics need foundational strengthening.",
+          "English language comprehension and writing skills require extra practice."
+        ],
+        "recommendations": [
+          "Target a minimum of 85% attendance for the next term to stay updated with coursework.",
+          "Establish a daily 1.5-hour home study routine focused on Mathematics and English revision.",
+          "Participate in remedial classes or peer-learning groups to bridge concept gaps."
+        ],
+        "career_guidance": "With improved consistency, Arjun's relative aptitude in Social Studies and Science could lead to viable paths in Humanities, Mass Communication, or Vocational Applied Sciences.",
+        "overall_insight": "Drastically improving classroom attendance is the primary catalyst required for Arjun to unlock his full academic potential."
+      }
+    },
+    {
+      "provider": "hermes",
+      "student_id": "S001",
+      "student_name": "Nishaleni",
+      "status": "success",
+      "error": null,
+      "time_seconds": 87.98,
+      "input_tokens": 2050,
+      "output_tokens": 266,
+      "total_tokens": 2316,
+      "cost_usd": 0.0,
+      "cost_inr": 0.0,
+      "word_count": 153,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\hermes\\S001_Nishaleni.pdf",
+      "pdf_size_bytes": 3955,
+      "narrative": {
+        "summary": "Nishaleni is a dedicated student who excels academically, consistently achieving high scores across subjects while maintaining good attendance. Her percentile in Mathematics indicates that she performs well compared to her peers.",
+        "strengths": [
+          "Strong performance in multiple subjects",
+          "High level of dedication and attendance",
+          "Consistent academic excellence"
+        ],
+        "improvements": [
+          "Expand exposure to and mastery of additional subjects",
+          "Work on bridging gaps between high scores and perfect attendance to achieve a balanced success",
+          "Utilize strengths in one area to develop prowess in other weaker areas"
+        ],
+        "recommendations": [
+          "Engage in extracurricular activities related to strong subjects to develop all-around competencies",
+          "Regular self-assessment of performance, identify areas of struggles and seek help proactively",
+          "Maintain a good work ethic and discipline consistently across all tasks"
+        ],
+        "career_guidance": "With a solid foundation in Computer Science, Nishaleni can consider building her career around the field.",
+        "overall_insight": "Analyzing Nishaleni's academic journey shows a student who knows how to excel but might benefit from finding balance and exploring lesser-studied subjects."
+      }
+    },
+    {
+      "provider": "hermes",
+      "student_id": "S002",
+      "student_name": "Maha Lakshmi",
+      "status": "success",
+      "error": null,
+      "time_seconds": 100.09,
+      "input_tokens": 2050,
+      "output_tokens": 353,
+      "total_tokens": 2403,
+      "cost_usd": 0.0,
+      "cost_inr": 0.0,
+      "word_count": 237,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\hermes\\S002_Maha_Lakshmi.pdf",
+      "pdf_size_bytes": 4365,
+      "narrative": {
+        "summary": "Student Maha Lakshmi from class 10A has shown consistent performance across subjects, with percentile scores ranging from 82% to 92%. Mathematics and Science are her strongest areas.",
+        "strengths": [
+          "- Consistently achieving high scores in Mathematics (72%) and Science (90%), showcasing strong science and numeracy skills.",
+          "- Demonstrating proficiency in English (76%) and Social Studies (85%), suggesting a balanced academic background.",
+          "- Gaining confidence in Computer Science, marked by an 79% score, indicating competence in a rapidly growing field."
+        ],
+        "improvements": [
+          "- Maha Lakshmi could focus more on critical thinking to further enhance her problem-solving skills in Mathematics.",
+          "- Exploring additional materials or engaging with the content outside class hours might improve her Science subject knowledge.",
+          "- Practicing more would increase her efficiency and understanding of English literature."
+        ],
+        "recommendations": [
+          "- Regularly review important concepts from each subject prior to exams for better retention and faster retrieval during tests.",
+          "- Work on projects or assignments involving coding in addition to learning the Computer Science curriculum to get hands-on experience.",
+          "- Stay diligent with her class and homework attendance, as missing out could be detrimental to gaining full understanding of the subjects."
+        ],
+        "career_guidance": "Considering Maha Lakshmi's performance across varied subject areas, she has potential in multiple careers. Pursuing higher education in a field that aligns with her strengths would greatly benefit her future career choices.",
+        "overall_insight": "Maha Lakshmi is an above-average student who can leverage her academic strengths to further excel and broaden her professional prospects."
+      }
+    },
+    {
+      "provider": "hermes",
+      "student_id": "S003",
+      "student_name": "Mohammed Nizamudeen",
+      "status": "success",
+      "error": null,
+      "time_seconds": 99.19,
+      "input_tokens": 2050,
+      "output_tokens": 347,
+      "total_tokens": 2397,
+      "cost_usd": 0.0,
+      "cost_inr": 0.0,
+      "word_count": 226,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\hermes\\S003_Mohammed_Nizamudeen.pdf",
+      "pdf_size_bytes": 4290,
+      "narrative": {
+        "summary": "Mohammed Nizamudeen, a student in class 10B, has demonstrated a well-rounded performance across different subject areas with scores ranging from 55 to 71 out of the possible 100. However, there is room for improvement and focus on stronger subjects.",
+        "strengths": [
+          "Performs reasonably well in core subjects like Mathematics, English, Social Studies, and Computer Science, scoring between 63-71%.",
+          "Shows determination and regular attendance, maintaining a commendable 74% record",
+          "Has achieved scores above the national percentile of some key subjects"
+        ],
+        "improvements": [
+          "Averages slightly lesser in non-core subjects like science scoring below the class average.",
+          "The performance could be elevated to match other core subject strengths.",
+          "There are improvements needed to bring all scores up closer to the top end of the range."
+        ],
+        "recommendations": [
+          "Pay special attention to Science, aiming for improvement in study methods or additional engagement with the topic",
+          "Focus on leveraging strengths in English and Computer science by participating more actively during classes and completing homework assignments diligently.",
+          "Dedicate some effort toward understanding the weaknesses in a subject, be it through private tutoring or self-study exercises."
+        ],
+        "career_guidance": "With consistent performance in core subjects and good attendance, Mohammed is well-positioned for further education. A stronger focus on all subjects can provide more robust college application materials.",
+        "overall_insight": "While balancing interests beyond academics remains crucial, concerted effort on academic improvement combined with strong social connections will pave the way to a bright future."
+      }
+    },
+    {
+      "provider": "hermes",
+      "student_id": "S004",
+      "student_name": "Priya Sharma",
+      "status": "success",
+      "error": null,
+      "time_seconds": 94.95,
+      "input_tokens": 2050,
+      "output_tokens": 315,
+      "total_tokens": 2365,
+      "cost_usd": 0.0,
+      "cost_inr": 0.0,
+      "word_count": 198,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\hermes\\S004_Priya_Sharma.pdf",
+      "pdf_size_bytes": 4253,
+      "narrative": {
+        "summary": "Priya Sharma, a student from class 10A, has shown exceptional performance in her studies with scores ranging from 88 to 96% across different subjects, while maintaining top percentile and high attendance.",
+        "strengths": [
+          "Priya excels in academic subjects like Mathematics and Computer Science, scoring above 90%",
+          "Her strong performance in English, Social Studies, and Science demonstrates a well-rounded educational experience",
+          "High attendance rate indicates Priya's dedication and commitment to her studies"
+        ],
+        "improvements": [
+          "Expand exposure to new knowledge domains or languages to enhance cross-disciplinary understanding",
+          "Seek opportunities for self-improvement beyond academic performance like leadership, arts, or sports",
+          "Develop time management skills to balance school work with extra-curricular activities and personal interests"
+        ],
+        "recommendations": [
+          "Consistent review and revision of course material regularly leads to better internalization",
+          "Seek guidance from teachers for subject-specific challenges and utilize after-school tutoring if needed",
+          "Build relationships with classmates for collaborative studying and networking"
+        ],
+        "career_guidance": "Priya, as you prepare for higher education, reflect on your strengths in academic subjects like Computer Science to explore potential career paths such as software development or data science.",
+        "overall_insight": "Priyansh's balanced performance reflects a holistic development journey marked by dedication, hard work and the ability to excel across diverse domains, paving a solid foundation for future success."
+      }
+    },
+    {
+      "provider": "hermes",
+      "student_id": "S005",
+      "student_name": "Arjun Kumar",
+      "status": "success",
+      "error": null,
+      "time_seconds": 98.96,
+      "input_tokens": 2050,
+      "output_tokens": 303,
+      "total_tokens": 2353,
+      "cost_usd": 0.0,
+      "cost_inr": 0.0,
+      "word_count": 193,
+      "pdf_path": "C:\\Users\\harivivek\\OneDrive\\Documents\\Student_Generation_Report\\assessment-report-generator\\output\\comparison\\hermes\\S005_Arjun_Kumar.pdf",
+      "pdf_size_bytes": 4137,
+      "narrative": {
+        "summary": "Arjun Kumar, a student in class 10B, has demonstrated average performance across subjects with Mathematics and Science being the strongest performers.",
+        "strengths": [
+          "Arjun's strength lies in his ability to perform well in Mathematics and Science, scoring 45 and 52 respectively.",
+          "He also shows competency in English and Social Studies, scoring consistently above average.",
+          "His good attendance at 60% signals engagement and availability for learning."
+        ],
+        "improvements": [
+          "Arjun's scores across all subjects are average or above, suggesting areas of further refinement.",
+          "Exploring ways to improve his score in the subjects where he is currently performing average may unlock additional potential.",
+          "Improving attendance would further contribute to his academic development and help retain knowledge."
+        ],
+        "recommendations": [
+          "Participate in extracurricular activities that align with strengths, such as science clubs or math teams.",
+          "Seek tutor support in subjects posing challenges, specifically Computer Science based on score.",
+          "Focus more attentively in class to improve understanding of course material and exam performance."
+        ],
+        "career_guidance": "Given his strong foundation in Mathematics and basic sciences, Arjun may consider STEM-related fields in higher studies.",
+        "overall_insight": "With consistent effort and focus, particularly on subjects he finds challenging, Arjun can further hone his academic skills and potentially reach for higher percentile grades."
+      }
+    }
+  ]
+}

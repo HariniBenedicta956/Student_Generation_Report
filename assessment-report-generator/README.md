@@ -1,8 +1,9 @@
 # AI-Powered Student Assessment Report Generator
 
 A prototype that turns structured student score data into personalized, AI-narrated PDF
-assessment reports using Gemini Flash for the narrative and ReportLab for deterministic
-PDF formatting — following the architecture in `Architecture.md` / `Project_requirement.md`.
+assessment reports using a self-hosted OpenAI-compatible LLM endpoint for the narrative and
+ReportLab for deterministic PDF formatting — following the architecture in `Architecture.md` /
+`Project_requirement.md`.
 
 ## Folder Structure
 
@@ -12,7 +13,7 @@ assessment-report-generator/
 │   ├── app.py              # Flask server (endpoints + orchestration)
 │   ├── prompt.py           # Prompt templates + fallback narrative
 │   ├── pdf_generator.py    # ReportLab PDF layout
-│   ├── gemini_client.py    # Gemini Flash API wrapper, tokens, cost
+│   ├── llm_client.py       # OpenAI-compatible chat completions client, tokens, cost
 │   ├── requirements.txt
 │   ├── .env                # Your local secrets (gitignored)
 │   └── .env.example
@@ -33,15 +34,18 @@ assessment-report-generator/
    pip install -r requirements.txt
    ```
 
-2. **Add your Gemini API key**
+2. **Configure the LLM endpoint**
 
    Edit `backend/.env` (already created from `.env.example`) and set:
 
    ```
-   GEMINI_API_KEY=your_real_key_here
+   LLM_API_BASE_URL=http://<your-llm-server-ip>:<port>/v1/chat/completions
+   LLM_API_KEY=your_key_here
+   LLM_MODEL=your_model_name
    ```
 
-   Get a key from [Google AI Studio](https://aistudio.google.com/apikey).
+   This targets any self-hosted server that implements the OpenAI-compatible
+   `/v1/chat/completions` API (LM Studio, Ollama, vLLM, text-generation-webui, etc.).
 
 3. **Run the backend**
 
@@ -83,24 +87,25 @@ assessment-report-generator/
 
 ## How Cost & Tokens Are Tracked
 
-- When the Gemini API reports `usage_metadata` (actual prompt/response token counts), that is
-  used directly.
+- When the LLM response reports `usage.prompt_tokens` / `usage.completion_tokens` (standard
+  OpenAI-compatible response field), that is used directly.
 - If unavailable, `estimate_tokens()` falls back to a ~1.3 tokens/word heuristic.
-- Cost is computed from token counts using approximate Gemini Flash per-1K-token USD rates
-  (configurable via `backend/.env`: `INPUT_COST_PER_1K_USD`, `OUTPUT_COST_PER_1K_USD`,
-  `USD_TO_INR`), matching the project's goal of tracking spend per report.
+- Cost defaults to **₹0** (`INPUT_COST_PER_1K_USD` / `OUTPUT_COST_PER_1K_USD` default to `0` in
+  `.env`) since this is a self-hosted model with no per-token billing. Set non-zero rates in
+  `.env` if you want to model an amortized cost (e.g. GPU/electricity).
 
 ## Error Handling
 
-- **Gemini API failure** (rate limit, network, malformed JSON): the call is retried up to 3
-  times with exponential backoff (handles transient rate limits during batch runs). If it still
-  fails, the student's report falls back to a generic template (`FALLBACK_NARRATIVE` in
-  `prompt.py`) so the PDF is still produced and the batch continues with the next student.
+- **LLM call failure** (timeout, connection error, malformed JSON): the call is retried up to 3
+  times with a short backoff (handles transient network/model-load issues during batch runs).
+  If it still fails, the student's report falls back to a generic template (`FALLBACK_NARRATIVE`
+  in `prompt.py`) so the PDF is still produced and the batch continues with the next student.
 - **PDF generation failure**: bubbles up as an `error` status for that student only; other
   students in the batch are unaffected.
-- **Rate limits**: `/batch` sleeps 1 second between students, and `gemini_client.py` retries
-  with exponential backoff (2s, 4s, ...) on failures, since Gemini Flash's free tier enforces
-  requests-per-minute limits.
+- **Latency**: this endpoint has been observed taking 40-60s per call (self-hosted, no elastic
+  capacity), so `llm_client.py` uses a generous request timeout (`LLM_REQUEST_TIMEOUT_SECONDS`,
+  default 120s). `/batch` still sleeps 1 second between students to avoid hammering a single
+  local instance.
 
 ## Sample Data
 
@@ -112,6 +117,6 @@ generic boilerplate — matching the project's success criteria.
 
 This prototype mirrors the recommended production architecture from `Project_requirement.md`:
 deterministic score/data handling stays in code, only the narrative comes from the LLM via a
-compact prompt (~1,800 input tokens), and PDF formatting is fully deterministic (ReportLab
-templates, not AI-generated). Swapping in a different model/provider or a batch API later only
-requires changing `gemini_client.py` — the rest of the pipeline is unaffected.
+compact prompt, and PDF formatting is fully deterministic (ReportLab templates, not
+AI-generated). Swapping in a different model/provider later only requires changing
+`llm_client.py` — the rest of the pipeline is unaffected.

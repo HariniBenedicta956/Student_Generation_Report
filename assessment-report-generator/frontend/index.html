@@ -30,6 +30,7 @@
   section:last-child { border-bottom: none; }
   h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: #555; margin: 0 0 12px; }
   input[type="file"] { padding: 8px; border: 1px dashed #aaa; border-radius: 6px; width: 100%; }
+  textarea#eventPromptInput { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; }
   .student-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 0; border-bottom: 1px solid #f0f0f0;
@@ -59,6 +60,17 @@
   .stat-card .value { font-size: 18px; font-weight: 600; color: #1a3c6e; }
   .estimate-note { font-size: 12px; color: #888; margin-top: 8px; }
   .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .model-config { background: #f7f9fc; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .mode-toggle { display: flex; gap: 18px; margin-bottom: 10px; font-size: 13px; }
+  .mode-toggle label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  select#providerSelect { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #fff; }
+  .provider-checks { display: flex; flex-wrap: wrap; gap: 12px; }
+  .provider-check-item { display: flex; align-items: center; gap: 6px; font-size: 13px; background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  .compare-card { background: #f7f9fc; border-radius: 8px; padding: 14px; margin-top: 12px; }
+  .compare-card h3 { margin: 0 0 8px; font-size: 14px; color: #1a3c6e; }
+  table.compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.compare-table th, table.compare-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e5e5; }
+  table.compare-table th { color: #666; font-weight: 600; font-size: 12px; text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -70,10 +82,27 @@
     <input type="file" id="fileInput" accept=".json,.csv" />
   </section>
 
+  <section>
+    <h2>2. Customize for an Event (optional)</h2>
+    <textarea id="eventPromptInput" rows="3" placeholder="e.g. This is for our Annual Day awards ceremony — emphasize achievements and encouragement. Or: Mid-term progress report — focus on areas to improve before finals."></textarea>
+  </section>
+
   <section id="studentsSection" style="display:none;">
-    <h2>2. Students (<span id="studentCount">0</span> loaded)</h2>
+    <h2>3. Students (<span id="studentCount">0</span> loaded)</h2>
     <div id="studentList"></div>
     <div class="estimate-note" id="estimateNote"></div>
+
+    <div class="model-config">
+      <div class="mode-toggle">
+        <label><input type="radio" name="mode" value="single" checked /> Single Model</label>
+        <label><input type="radio" name="mode" value="compare" /> Compare Models</label>
+      </div>
+      <div id="singleModelRow">
+        <select id="providerSelect"><option>Loading models...</option></select>
+      </div>
+      <div id="compareModelRow" class="provider-checks" style="display:none;"></div>
+    </div>
+
     <div class="actions">
       <button id="generateBtn">🚀 Generate Reports</button>
       <button id="downloadAllBtn" class="secondary" disabled>📥 Download All (ZIP)</button>
@@ -91,15 +120,25 @@
       <div class="stat-card"><div class="label">Reports Done</div><div class="value" id="statDone">0/0</div></div>
     </div>
   </section>
+
+  <section id="compareSection" style="display:none;">
+    <h2>🔬 Comparison Results</h2>
+    <div id="compareResults"></div>
+  </section>
 </div>
 
 <script>
-const API_BASE = "http://localhost:5000";
+// Defaults to whatever host/port served this page (works from any device once
+// the backend binds to 0.0.0.0) — falls back to localhost only when the file
+// is opened directly (file://) instead of through Flask.
+const API_BASE = window.location.protocol === "file:" ? "http://localhost:5000" : window.location.origin;
 const EST_INPUT_TOKENS_PER_STUDENT = 1800;
 const EST_OUTPUT_TOKENS_PER_STUDENT = 960;
 const EST_INR_PER_STUDENT = 0.35;
 
 let students = [];
+let modelProviders = [];
+let mode = "single";
 
 const fileInput = document.getElementById("fileInput");
 const studentsSection = document.getElementById("studentsSection");
@@ -115,12 +154,53 @@ const statTokens = document.getElementById("statTokens");
 const statCost = document.getElementById("statCost");
 const statTime = document.getElementById("statTime");
 const statDone = document.getElementById("statDone");
+const eventPromptInput = document.getElementById("eventPromptInput");
+const providerSelect = document.getElementById("providerSelect");
+const singleModelRow = document.getElementById("singleModelRow");
+const compareModelRow = document.getElementById("compareModelRow");
+const compareSection = document.getElementById("compareSection");
+const compareResults = document.getElementById("compareResults");
 
 fileInput.addEventListener("change", handleFile);
 generateBtn.addEventListener("click", generateReports);
 downloadAllBtn.addEventListener("click", () => {
   window.location.href = `${API_BASE}/download-all`;
 });
+document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener("change", updateModeUI));
+
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function providerLabel(key) {
+  const p = modelProviders.find(p => p.key === key);
+  return p ? p.label : key;
+}
+
+async function loadProviders() {
+  try {
+    const res = await fetch(`${API_BASE}/providers`);
+    const data = await res.json();
+    modelProviders = data.providers || [];
+    providerSelect.innerHTML = modelProviders
+      .map(p => `<option value="${p.key}" ${p.key === data.default ? "selected" : ""}>${escapeHtml(p.label)}</option>`)
+      .join("");
+    compareModelRow.innerHTML = modelProviders
+      .map(p => `<label class="provider-check-item"><input type="checkbox" class="provider-check" value="${p.key}" checked /> ${escapeHtml(p.label)}</label>`)
+      .join("");
+  } catch (err) {
+    providerSelect.innerHTML = `<option value="">(backend unreachable)</option>`;
+  }
+}
+
+function updateModeUI() {
+  mode = document.querySelector('input[name="mode"]:checked').value;
+  singleModelRow.style.display = mode === "single" ? "block" : "none";
+  compareModelRow.style.display = mode === "compare" ? "flex" : "none";
+  generateBtn.textContent = mode === "compare" ? "🔬 Compare Models" : "🚀 Generate Reports";
+}
+
+loadProviders();
 
 function handleFile(e) {
   const file = e.target.files[0];
@@ -148,32 +228,80 @@ function parseJSON(text) {
   return Array.isArray(data) ? data : (data.students || []);
 }
 
+// Common header spellings that should map onto the known fields regardless of
+// case/spacing/underscores (e.g. "Student_ID", "Roll Number", "Student Name").
+const HEADER_ALIASES = {
+  id: "id", studentid: "id", rollnumber: "id", rollno: "id", registrationnumber: "id",
+  name: "name", studentname: "name", fullname: "name",
+  class: "class", section: "class", grade: "class", classsection: "class",
+  percentile: "percentile",
+  attendance: "attendance",
+};
+const SCORE_MIN = 0, SCORE_MAX = 100; // plausible range for a subject score out of 100
+
+function normalizeHeader(h) {
+  return h.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+// Splits one CSV line respecting double-quoted fields (so commas inside a
+// quoted survey answer don't get treated as column separators).
+function splitCsvLine(line) {
+  const values = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"' && line[i + 1] === '"') { current += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { current += c; }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      values.push(current.trim());
+      current = "";
+    } else {
+      current += c;
+    }
+  }
+  values.push(current.trim());
+  return values;
+}
+
 function parseCSV(text) {
   text = text.replace(/^﻿/, ""); // strip UTF-8 BOM (common in Excel exports)
   const lines = text.trim().split(/\r?\n/);
-  const rawHeaders = lines[0].split(",").map(h => h.trim());
+  const rawHeaders = splitCsvLine(lines[0]);
   const known = new Set(["id", "name", "class", "percentile", "attendance"]);
-  // Match id/name/class/percentile/attendance case-insensitively; everything else is a score subject.
-  const headerKeyMap = rawHeaders.map(h => {
-    const lower = h.toLowerCase();
-    return known.has(lower) ? lower : h;
-  });
+  const headerKeyMap = rawHeaders.map(h => HEADER_ALIASES[normalizeHeader(h)] || h);
 
   return lines.slice(1).filter(l => l.trim().length).map((line, i) => {
-    const values = line.split(",").map(v => v.trim());
+    const values = splitCsvLine(line);
     const row = {};
     headerKeyMap.forEach((key, idx) => { row[key] = values[idx]; });
+
+    // Only numbers in a plausible 0-100 score range count as a subject score —
+    // anything else (phone numbers, registration IDs, free-text survey answers)
+    // is kept as a raw field so it's still available to the prompt, but doesn't
+    // get silently averaged into the overall score.
     const scores = {};
+    const fields = {};
     headerKeyMap.forEach(key => {
-      if (!known.has(key) && row[key] !== undefined && row[key] !== "" && !isNaN(Number(row[key]))) {
-        scores[key] = Number(row[key]);
+      if (known.has(key) || row[key] === undefined || row[key] === "") return;
+      const num = Number(row[key]);
+      if (!isNaN(num) && num >= SCORE_MIN && num <= SCORE_MAX) {
+        scores[key] = num;
+      } else {
+        fields[key] = row[key];
       }
     });
+
     return {
       id: row.id || `S${String(i + 1).padStart(3, "0")}`,
       name: row.name || `Student ${i + 1}`,
       class: row.class || "",
       scores,
+      fields,
       percentile: row.percentile && !isNaN(Number(row.percentile)) ? Number(row.percentile) : null,
       attendance: row.attendance && !isNaN(Number(row.attendance)) ? Number(row.attendance) : null,
     };
@@ -240,10 +368,13 @@ async function generateReports() {
     alert("Select at least one student first.");
     return;
   }
+  if (mode === "compare" && !selectedProviders().length) {
+    alert("Select at least one model to compare.");
+    return;
+  }
 
   generateBtn.disabled = true;
   fileInput.disabled = true;
-  statsSection.style.display = "block";
 
   try {
     const uploadRes = await fetch(`${API_BASE}/upload`, {
@@ -259,6 +390,26 @@ async function generateReports() {
     return;
   }
 
+  if (mode === "compare") {
+    await runCompare(ids);
+  } else {
+    await runSingle(ids);
+  }
+
+  generateBtn.disabled = false;
+  fileInput.disabled = false;
+}
+
+function selectedProviders() {
+  return [...compareModelRow.querySelectorAll(".provider-check:checked")].map(cb => cb.value);
+}
+
+async function runSingle(ids) {
+  compareSection.style.display = "none";
+  statsSection.style.display = "block";
+  const provider = providerSelect.value || undefined;
+  const custom_instructions = eventPromptInput.value.trim() || undefined;
+
   let totalTokens = 0, totalCostInr = 0, done = 0;
   const startTime = performance.now();
 
@@ -272,7 +423,7 @@ async function generateReports() {
       const res = await fetch(`${API_BASE}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, provider, custom_instructions }),
       });
       const data = await res.json();
       if (!res.ok || data.status === "error") {
@@ -298,9 +449,70 @@ async function generateReports() {
 
   progressBar.style.width = "100%";
   progressText.textContent = `Done! Generated ${done}/${ids.length} reports.`;
-  generateBtn.disabled = false;
-  fileInput.disabled = false;
   downloadAllBtn.disabled = done === 0;
+}
+
+async function runCompare(ids) {
+  statsSection.style.display = "none";
+  compareSection.style.display = "block";
+  compareResults.innerHTML = "";
+  const chosen = selectedProviders();
+  const custom_instructions = eventPromptInput.value.trim() || undefined;
+
+  progressBar.style.width = "50%";
+  progressText.textContent = `Comparing ${chosen.length} model(s) across ${ids.length} student(s)... local models can take a while.`;
+
+  try {
+    const res = await fetch(`${API_BASE}/compare`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, providers: chosen, custom_instructions }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `status ${res.status}`);
+    renderCompareResults(data);
+    progressBar.style.width = "100%";
+    progressText.textContent = `Done! Compared ${chosen.length} model(s) in ${data.processing_time_seconds}s.`;
+    downloadAllBtn.disabled = false;
+  } catch (err) {
+    progressText.textContent = `Comparison failed: ${err.message}`;
+  }
+}
+
+function renderCompareResults(data) {
+  const summaryHtml = `<div class="stats-grid">${data.summary.map(s => `
+    <div class="stat-card">
+      <div class="label">${escapeHtml(providerLabel(s.provider))}</div>
+      <div class="value">${s.succeeded}/${s.succeeded + s.failed} ok</div>
+      <div class="estimate-note">${s.total_tokens.toLocaleString()} tokens &middot; ₹${s.total_cost_inr}</div>
+    </div>`).join("")}</div>`;
+
+  const cardsHtml = data.results.map(row => `
+    <div class="compare-card">
+      <h3>${escapeHtml(row.name)}</h3>
+      <table class="compare-table">
+        <thead><tr><th>Model</th><th>Status</th><th>Tokens</th><th>Cost ₹</th><th></th></tr></thead>
+        <tbody>
+          ${data.providers.map(p => {
+            const r = row.providers[p] || {};
+            const statusClass = r.status || "error";
+            const statusLabel = r.status === "done" ? "✅ Done" : r.status === "done_with_fallback" ? "⚠️ Fallback" : "❌ Error";
+            const cell = r.download_url
+              ? `<a class="download-link" href="${API_BASE}${r.download_url}">Download</a>`
+              : `<span style="color:#a71d2a;font-size:12px;">${escapeHtml(r.error || "")}</span>`;
+            return `<tr>
+              <td>${escapeHtml(providerLabel(p))}</td>
+              <td><span class="status ${statusClass}">${statusLabel}</span></td>
+              <td>${r.total_tokens || 0}</td>
+              <td>₹${r.cost_inr ?? 0}</td>
+              <td>${cell}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>`).join("");
+
+  compareResults.innerHTML = summaryHtml + cardsHtml;
 }
 </script>
 </body>
