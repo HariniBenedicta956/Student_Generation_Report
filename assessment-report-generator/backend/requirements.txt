@@ -3,3 +3,4 @@ flask-cors
 requests
 reportlab
 python-dotenv
+google-genai

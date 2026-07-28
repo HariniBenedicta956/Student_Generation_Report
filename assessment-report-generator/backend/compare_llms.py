@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import time
+import functools
 import threading
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -111,8 +112,11 @@ def run_provider(provider_name, call_fn, cost_fn):
 
 if __name__ == "__main__":
     os.makedirs(OUT_DIR, exist_ok=True)
+    hermes_call = functools.partial(llm_client.call_llm, provider="hermes")
+    hermes_cost = functools.partial(llm_client.calculate_cost, provider="hermes")
+
     t_gemini = threading.Thread(target=run_provider, args=("gemini", call_gemini, gemini_cost))
-    t_hermes = threading.Thread(target=run_provider, args=("hermes", llm_client.call_llm, llm_client.calculate_cost))
+    t_hermes = threading.Thread(target=run_provider, args=("hermes", hermes_call, hermes_cost))
 
     overall_start = time.time()
     t_gemini.start()

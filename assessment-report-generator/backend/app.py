@@ -4,12 +4,13 @@ import csv
 import json
 import time
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 
 from prompt import SYSTEM_PROMPT, build_prompt, FALLBACK_NARRATIVE
-from llm_client import call_llm, estimate_tokens, calculate_cost
+from llm_client import call_llm, estimate_tokens, calculate_cost, list_providers, DEFAULT_PROVIDER
 from pdf_generator import generate_pdf
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,41 +26,61 @@ STUDENTS = {}  # in-memory store: id -> student dict, populated via /upload
 BATCH_DELAY_SECONDS = 1  # gentle spacing between calls so /batch stays under free-tier rate limits
 
 KNOWN_FIELDS = {"id", "name", "class", "percentile", "attendance"}
+# Common header spellings that should map onto the known fields regardless of
+# case/spacing/underscores (e.g. "Student_ID", "Roll Number", "Student Name").
+HEADER_ALIASES = {
+    "id": "id", "studentid": "id", "rollnumber": "id", "rollno": "id", "registrationnumber": "id",
+    "name": "name", "studentname": "name", "fullname": "name",
+    "class": "class", "section": "class", "grade": "class", "classsection": "class",
+    "percentile": "percentile",
+    "attendance": "attendance",
+}
+SCORE_MIN, SCORE_MAX = 0, 100  # plausible range for a subject score out of 100
 
 
-def _safe_filename(student):
+def _safe_filename(student, suffix=""):
     name = student.get("name") or student.get("id") or "student"
     name = "".join(c for c in name if c.isalnum() or c in (" ", "_")).strip().replace(" ", "_")
-    return f"{student.get('id', 'S000')}_{name or 'student'}.pdf"
+    return f"{student.get('id', 'S000')}_{name or 'student'}{suffix}.pdf"
+
+
+def _normalize_header(h):
+    return "".join(ch for ch in h.strip().lower() if ch.isalnum())
 
 
 def _parse_csv(file_stream):
     text = file_stream.read().decode("utf-8-sig")  # utf-8-sig strips a BOM if present (common in Excel exports)
     reader = csv.DictReader(io.StringIO(text))
-    # Match id/name/class/percentile/attendance case-insensitively; everything else is a score subject.
     fieldnames = reader.fieldnames or []
-    key_map = {f: (f.strip().lower() if f.strip().lower() in KNOWN_FIELDS else f) for f in fieldnames}
+    key_map = {f: HEADER_ALIASES.get(_normalize_header(f), f) for f in fieldnames}
 
     students = []
     for i, raw_row in enumerate(reader, start=1):
         row = {key_map[k]: (v.strip() if isinstance(v, str) else v) for k, v in raw_row.items() if k}
         scores = {}
+        fields = {}
         for k, v in row.items():
             if k in KNOWN_FIELDS or v in (None, ""):
                 continue
             try:
-                scores[k] = int(v)
-            except ValueError:
-                try:
-                    scores[k] = float(v)
-                except ValueError:
-                    pass  # non-numeric column that isn't a known field; skip rather than crash
+                numeric = float(v)
+            except (TypeError, ValueError):
+                numeric = None
+            # Only numbers in a plausible 0-100 score range count as a subject score —
+            # anything else (phone numbers, registration IDs, free-text survey answers)
+            # is kept as a raw field so it's still available to the prompt, but doesn't
+            # get silently averaged into the overall score.
+            if numeric is not None and SCORE_MIN <= numeric <= SCORE_MAX:
+                scores[k] = int(numeric) if numeric.is_integer() else numeric
+            else:
+                fields[k] = v
         students.append(
             {
                 "id": row.get("id") or f"S{i:03d}",
                 "name": row.get("name") or f"Student {i}",
                 "class": row.get("class", ""),
                 "scores": scores,
+                "fields": fields,
                 "percentile": int(row["percentile"]) if row.get("percentile") else None,
                 "attendance": int(row["attendance"]) if row.get("attendance") else None,
             }
@@ -95,10 +116,10 @@ def upload():
     return jsonify({"loaded": len(students), "students": students})
 
 
-def _process_student(student):
-    prompt = build_prompt(student)
+def _process_student(student, provider=None, custom_instructions=None):
+    prompt = build_prompt(student, custom_instructions=custom_instructions)
     try:
-        narrative, input_tokens, output_tokens = call_llm(prompt, SYSTEM_PROMPT)
+        narrative, input_tokens, output_tokens = call_llm(prompt, SYSTEM_PROMPT, provider=provider)
         used_fallback = False
     except Exception:
         narrative = FALLBACK_NARRATIVE
@@ -106,14 +127,19 @@ def _process_student(student):
         output_tokens = estimate_tokens(json.dumps(FALLBACK_NARRATIVE))
         used_fallback = True
 
-    filename = _safe_filename(student)
+    resolved_provider = provider or DEFAULT_PROVIDER
+    # Only suffix the filename when a non-default provider was explicitly requested
+    # (e.g. compare mode), so single-mode downloads keep their existing plain names.
+    suffix = f"_{provider}" if provider else ""
+    filename = _safe_filename(student, suffix=suffix)
     output_path = os.path.join(OUTPUT_DIR, filename)
     generate_pdf(student, narrative, output_path)
 
-    cost_usd, cost_inr = calculate_cost(input_tokens, output_tokens)
+    cost_usd, cost_inr = calculate_cost(input_tokens, output_tokens, provider=provider)
     return {
         "id": student["id"],
         "name": student["name"],
+        "provider": resolved_provider,
         "status": "done_with_fallback" if used_fallback else "done",
         "filename": filename,
         "download_url": f"/download/{filename}",
@@ -125,6 +151,11 @@ def _process_student(student):
     }
 
 
+@app.route("/providers", methods=["GET"])
+def providers():
+    return jsonify({"providers": list_providers(), "default": DEFAULT_PROVIDER})
+
+
 @app.route("/generate", methods=["POST"])
 def generate():
     payload = request.get_json(force=True) or {}
@@ -134,9 +165,11 @@ def generate():
     if student is None:
         return jsonify({"error": "student not found"}), 404
 
+    provider = payload.get("provider")
+    custom_instructions = payload.get("custom_instructions")
     start = time.time()
     try:
-        result = _process_student(student)
+        result = _process_student(student, provider=provider, custom_instructions=custom_instructions)
     except Exception as e:
         return jsonify({"id": student.get("id"), "status": "error", "error": str(e)}), 500
     result["processing_time_seconds"] = round(time.time() - start, 2)
@@ -147,13 +180,15 @@ def generate():
 def batch():
     payload = request.get_json(force=True) or {}
     ids = payload.get("ids")
+    provider = payload.get("provider")
+    custom_instructions = payload.get("custom_instructions")
     students = [STUDENTS[i] for i in ids if i in STUDENTS] if ids else list(STUDENTS.values())
 
     start = time.time()
     results = []
     for i, student in enumerate(students):
         try:
-            results.append(_process_student(student))
+            results.append(_process_student(student, provider=provider, custom_instructions=custom_instructions))
         except Exception as e:
             results.append({"id": student.get("id"), "name": student.get("name"), "status": "error", "error": str(e)})
         if i < len(students) - 1:
@@ -181,6 +216,80 @@ def batch():
     )
 
 
+@app.route("/compare", methods=["POST"])
+def compare():
+    """Runs the same student(s) through several providers and returns a students x providers matrix.
+
+    One thread per provider (each iterating its students sequentially, same
+    spacing as /batch) so providers run concurrently but a single slow/local
+    model doesn't block the others.
+    """
+    payload = request.get_json(force=True) or {}
+    ids = payload.get("ids")
+    custom_instructions = payload.get("custom_instructions")
+    students = [STUDENTS[i] for i in ids if i in STUDENTS] if ids else list(STUDENTS.values())
+    if not students:
+        return jsonify({"error": "no students found"}), 404
+
+    available = {p["key"] for p in list_providers()}
+    requested = payload.get("providers") or list(available)
+    chosen_providers = [p for p in requested if p in available]
+    if not chosen_providers:
+        return jsonify({"error": "no valid providers selected"}), 400
+
+    def run_provider(provider):
+        provider_results = []
+        for i, student in enumerate(students):
+            try:
+                provider_results.append(_process_student(student, provider=provider, custom_instructions=custom_instructions))
+            except Exception as e:
+                provider_results.append(
+                    {"id": student.get("id"), "name": student.get("name"), "provider": provider, "status": "error", "error": str(e)}
+                )
+            if i < len(students) - 1:
+                time.sleep(BATCH_DELAY_SECONDS)
+        return provider, provider_results
+
+    start = time.time()
+    with ThreadPoolExecutor(max_workers=len(chosen_providers)) as executor:
+        by_provider = dict(executor.map(run_provider, chosen_providers))
+    elapsed = round(time.time() - start, 2)
+
+    # Reshape into rows per student so the UI can render a students x providers matrix.
+    rows = []
+    for i, student in enumerate(students):
+        rows.append(
+            {
+                "id": student.get("id"),
+                "name": student.get("name"),
+                "providers": {p: by_provider[p][i] for p in chosen_providers},
+            }
+        )
+
+    summary = []
+    for p in chosen_providers:
+        ok = [r for r in by_provider[p] if r.get("status", "").startswith("done")]
+        summary.append(
+            {
+                "provider": p,
+                "succeeded": len(ok),
+                "failed": len(students) - len(ok),
+                "total_tokens": sum(r["total_tokens"] for r in ok),
+                "total_cost_inr": round(sum(r["cost_inr"] for r in ok), 4),
+            }
+        )
+
+    return jsonify(
+        {
+            "providers": chosen_providers,
+            "total_students": len(students),
+            "processing_time_seconds": elapsed,
+            "summary": summary,
+            "results": rows,
+        }
+    )
+
+
 @app.route("/download/<path:filename>", methods=["GET"])
 def download(filename):
     return send_from_directory(OUTPUT_DIR, filename, as_attachment=True)
@@ -202,7 +311,5 @@ def index():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
 
-if __name__ == "__main__":
-    # host=0.0.0.0 binds every network interface (not just loopback) so the app
-    # is reachable from other devices via the server's LAN/public IP.
+if __name__ == "__main__":   
     app.run(host="0.0.0.0", port=5000, debug=True)
